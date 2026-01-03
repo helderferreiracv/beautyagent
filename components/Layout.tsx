@@ -1,8 +1,11 @@
 
+'use client';
+
 import React, { useEffect, useState } from 'react';
-import { Sparkles, Menu, X, ArrowRight, LogIn, Settings, Lock, CreditCard, Sun, Moon } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight, Lock, CreditCard, Sun, Moon } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BottomNavbar } from './BottomNavbar';
+import { useAppTheme } from '../app/providers';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,26 +14,17 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isLight, toggleTheme } = useAppTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLightMode, setIsLightMode] = useState(localStorage.getItem('theme') === 'light');
   const [trialStatus, setTrialStatus] = useState<{ daysLeft: number, isExpired: boolean } | null>(null);
 
-  const isManagement = location.pathname.startsWith('/owner') || location.pathname.startsWith('/staff') || location.pathname.startsWith('/admin');
-  const isOwner = location.pathname.startsWith('/owner');
-  const isLanding = location.pathname === '/';
+  const pathname = location.pathname;
+  const isManagement = pathname.startsWith('/owner') || pathname.startsWith('/staff') || pathname.startsWith('/admin');
+  const isOwner = pathname.startsWith('/owner');
+  const isLanding = pathname === '/' || pathname === '';
 
   useEffect(() => {
-    if (isLightMode) {
-      document.body.classList.add('light-mode');
-      localStorage.setItem('theme', 'light');
-    } else {
-      document.body.classList.remove('light-mode');
-      localStorage.setItem('theme', 'dark');
-    }
-  }, [isLightMode]);
-
-  useEffect(() => {
-    if (isOwner) {
+    if (typeof window !== 'undefined' && isOwner) {
       const startStr = localStorage.getItem('beauty_trial_start');
       if (startStr) {
         const startDate = new Date(startStr);
@@ -46,97 +40,57 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         });
       }
     }
-  }, [isOwner, location]);
-
-  const toggleTheme = () => setIsLightMode(!isLightMode);
+  }, [isOwner, pathname]);
 
   return (
-    <div className={`flex flex-col font-sans text-text selection:bg-primary/20 bg-background ${isManagement ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
+    <div className={`flex flex-col min-h-screen text-[#f1f0e6] bg-[#29292b] transition-colors duration-300 ${isLight ? 'light-mode' : ''} ${isManagement ? 'h-screen overflow-hidden' : ''}`}>
       
       {isOwner && trialStatus && (
-        <div className={`shrink-0 px-4 py-2 text-center text-[11px] font-black uppercase tracking-widest flex justify-center items-center gap-4 relative z-[60] ${trialStatus.isExpired ? 'bg-red-500 text-white' : 'bg-primary text-black'}`}>
+        <div className={`shrink-0 px-4 py-2 text-center text-[11px] font-black uppercase tracking-widest flex justify-center items-center gap-4 relative z-[60] ${trialStatus.isExpired ? 'bg-rose-500 text-white' : 'bg-[#ebff57] text-black'}`}>
            {trialStatus.isExpired ? (
-             <>
-               <span className="flex items-center gap-2"><Lock size={14} /> Trial Expirado. Acesso limitado.</span>
-               <button className="bg-white text-red-500 px-3 py-1 rounded-md hover:bg-zinc-100 transition-colors">Subscrever Agora</button>
-             </>
+             <span className="flex items-center gap-2"><Lock size={14} /> Trial Expirado.</span>
            ) : (
-             <>
-               <span className="flex items-center gap-2"><CreditCard size={14} /> {trialStatus.daysLeft} dias restantes no Trial Grátis.</span>
-               <button className="underline decoration-black/50 hover:decoration-black transition-all">Ver Planos</button>
-             </>
+             <span className="flex items-center gap-2"><CreditCard size={14} /> {trialStatus.daysLeft} dias de trial restantes.</span>
            )}
         </div>
       )}
 
       {!isManagement && (
         <header className="fixed top-0 w-full z-50 transition-all duration-300">
-          <div className={`absolute inset-0 transition-all duration-500 ${isLanding ? 'bg-transparent' : 'bg-surface/80 backdrop-blur-xl border-b border-white/5'}`}></div>
+          <div className={`absolute inset-0 transition-all duration-500 ${isLanding ? 'bg-transparent' : 'bg-[#343436]/80 backdrop-blur-xl border-b border-white/5'}`}></div>
           
-          <div className="container mx-auto px-6 h-16 flex items-center justify-between relative z-10">
-            <Link to="/" className="flex items-center gap-2 group">
-              <div className="p-2 rounded-lg bg-white/5 border border-white/5 group-hover:border-primary/50 transition-colors">
-                <Sparkles size={16} className="text-primary" />
+          <div className="container mx-auto px-6 h-20 flex items-center justify-between relative z-10">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 group-hover:border-[#ebff57]/50 flex items-center justify-center transition-all">
+                <Sparkles size={18} className="text-[#ebff57]" />
               </div>
-              <span className="text-base font-black tracking-tighter text-white uppercase italic">
-                BeautyAgent
-              </span>
+              <span className="text-xl font-black tracking-tighter text-white uppercase italic">BeautyAgent</span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-8">
-              <button onClick={toggleTheme} className="p-2 rounded-xl bg-white/5 text-zinc-400 hover:text-primary transition-colors">
-                {isLightMode ? <Moon size={18} /> : <Sun size={18} />}
+            <nav className="hidden md:flex items-center gap-10">
+              <button onClick={toggleTheme} className="p-2.5 rounded-xl bg-white/5 text-zinc-400 hover:text-[#ebff57] transition-colors">
+                {isLight ? <Moon size={20} /> : <Sun size={20} />}
               </button>
-              <div className="flex items-center gap-4">
-                {isOwner ? (
-                  <>
-                    <button onClick={() => navigate('/owner/dashboard')} className="text-[12px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">Dashboard</button>
-                    <button onClick={() => navigate('/owner/settings')} className="text-[12px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors flex items-center gap-2"><Settings size={14} /> Definições</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => navigate('/owner/dashboard')} className="px-5 py-2 rounded-lg text-[12px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-all hover:bg-white/5 flex items-center gap-2"><LogIn size={14} /> Login</button>
-                    <button onClick={() => navigate('/trial/register')} className="px-6 py-2.5 rounded-xl text-[12px] font-black uppercase tracking-widest text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-2 active:scale-95">Trial <ArrowRight size={14} strokeWidth={3} /></button>
-                  </>
-                )}
+              <div className="flex items-center gap-6">
+                <Link to="/owner/dashboard" className="text-[12px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">Login</Link>
+                <Link to="/trial/register" className="px-8 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest text-black bg-[#ebff57] hover:bg-white transition-all shadow-[0_0_20px_rgba(235,255,87,0.2)]">Trial Grátis</Link>
               </div>
             </nav>
 
             <div className="md:hidden flex items-center gap-4">
-              <button onClick={toggleTheme} className="p-2 rounded-xl bg-white/5 text-zinc-400">
-                {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
-              </button>
-              <button className="text-zinc-400 hover:text-white p-1 active:scale-90 transition-transform" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              <button className="p-2 text-zinc-400" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
               </button>
             </div>
           </div>
-
-          {isMenuOpen && (
-            <div className="md:hidden absolute top-16 left-0 w-full bg-surface border-b border-white/10 p-6 flex flex-col gap-6 shadow-2xl animate-fade-in z-50">
-              <button onClick={() => { navigate('/trial/register'); setIsMenuOpen(false); }} className="text-2xl font-black text-white uppercase italic text-left tracking-tight">Começar Trial</button>
-              <button onClick={() => { navigate('/owner/dashboard'); setIsMenuOpen(false); }} className="text-sm font-bold text-zinc-400 uppercase tracking-widest text-left">Painel Salão</button>
-              <button onClick={() => { navigate('/client/service'); setIsMenuOpen(false); }} className="text-sm font-bold text-primary uppercase tracking-widest text-left flex items-center gap-2"><Sparkles size={16}/> Demo Cliente</button>
-            </div>
-          )}
         </header>
       )}
 
-      <main className={`flex-1 flex flex-col relative min-h-0 ${isManagement ? 'w-full overflow-hidden' : isLanding ? 'w-full p-0' : 'container mx-auto pt-20 pb-12'}`}>
-        {isManagement ? (
-           <div className="w-full h-full overflow-y-auto">
-              {/* Header inside management to handle theme toggle */}
-              <div className="absolute top-6 right-8 z-50 hidden md:block">
-                 <button onClick={toggleTheme} className="p-3 rounded-2xl bg-surface/50 backdrop-blur-md border border-white/5 text-zinc-400 hover:text-primary transition-all shadow-xl">
-                    {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
-                 </button>
-              </div>
-              {children}
-           </div>
-        ) : children}
+      <main className={`flex-1 flex flex-col relative ${isManagement ? 'w-full overflow-hidden' : isLanding ? 'w-full p-0' : 'container mx-auto pt-24 pb-20'}`}>
+        {children}
       </main>
 
-      <BottomNavbar />
+      {!isManagement && <BottomNavbar />}
     </div>
   );
 };

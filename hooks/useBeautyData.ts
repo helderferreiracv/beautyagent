@@ -1,4 +1,6 @@
 
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 
 export interface UnifiedBooking {
@@ -24,7 +26,6 @@ export const useBeautyData = () => {
   const [waitingList, setWaitingList] = useState<any[]>([]);
   const [isDemo, setIsDemo] = useState(false);
   
-  // Real-time Stats
   const [stats, setStats] = useState({
     totalClients: 0,
     totalRevenue: 0,
@@ -33,13 +34,13 @@ export const useBeautyData = () => {
   });
 
   const loadData = useCallback(() => {
-    // 1. Settings & Demo Flag
+    if (typeof window === 'undefined') return;
+
     const settingsData = JSON.parse(localStorage.getItem('beauty_settings') || '{}');
     const demoFlag = localStorage.getItem('beauty_is_demo_active') === 'true';
     setSettings(settingsData);
     setIsDemo(demoFlag);
 
-    // 2. Staff & Services (No hardcoded fallbacks here - relies on DB or empty)
     const staffData = JSON.parse(localStorage.getItem('owner_staff_db') || '[]');
     const servicesData = JSON.parse(localStorage.getItem('owner_services_db') || '[]');
     const clientsData = JSON.parse(localStorage.getItem('owner_clients_db') || '[]');
@@ -48,7 +49,6 @@ export const useBeautyData = () => {
     setServices(servicesData);
     setClients(clientsData);
 
-    // 3. Merged Bookings
     const clientBookingsRaw = JSON.parse(localStorage.getItem('beauty_bookings') || '[]');
     const ownerBookingsRaw = JSON.parse(localStorage.getItem('owner_bookings_db') || '[]');
 
@@ -83,26 +83,21 @@ export const useBeautyData = () => {
     const allBookings = [...normalizedOwner, ...normalizedClient];
     setBookings(allBookings);
 
-    // 4. Waiting List
     const logs = JSON.parse(localStorage.getItem('beauty_logs_db') || '[]');
     const waitingLogs = logs.filter((l: any) => l.type === 'ai' && l.message.includes('Lista de Espera'));
     setWaitingList(waitingLogs);
 
-    // 5. Calculate Real KPIs
     calculateStats(allBookings, clientsData);
-
   }, []);
 
   const calculateStats = (allBookings: UnifiedBooking[], clientsData: any[]) => {
     const today = new Date().toISOString().split('T')[0];
     const currentMonth = new Date().getMonth();
     
-    // Total Clients (Unique Phones from bookings + Saved Clients)
     const uniquePhones = new Set();
     clientsData.forEach((c: any) => uniquePhones.add(c.phone));
     allBookings.forEach(b => { if(b.phone) uniquePhones.add(b.phone); });
     
-    // Revenue
     let totalRev = 0;
     let monthRev = 0;
     let todayCount = 0;
@@ -110,13 +105,9 @@ export const useBeautyData = () => {
     allBookings.forEach(b => {
        if (b.status === 'completed') {
           totalRev += b.priceValue;
-          if (new Date(b.date).getMonth() === currentMonth) {
-             monthRev += b.priceValue;
-          }
+          if (new Date(b.date).getMonth() === currentMonth) monthRev += b.priceValue;
        }
-       if (b.date === today && b.status !== 'cancelled') {
-          todayCount++;
-       }
+       if (b.date === today && b.status !== 'cancelled') todayCount++;
     });
 
     setStats({
@@ -141,38 +132,8 @@ export const useBeautyData = () => {
 
     localStorage.setItem('beauty_bookings', JSON.stringify(updateFn(clientBookings)));
     localStorage.setItem('owner_bookings_db', JSON.stringify(updateFn(ownerBookings)));
-    
     loadData();
   };
 
-  const clearDemoData = () => {
-     // Mantém apenas settings e user profile, limpa dados operacionais
-     localStorage.removeItem('beauty_bookings');
-     localStorage.removeItem('owner_bookings_db');
-     localStorage.removeItem('owner_clients_db');
-     localStorage.removeItem('owner_staff_db');
-     localStorage.removeItem('owner_services_db');
-     localStorage.removeItem('beauty_logs_db');
-     localStorage.removeItem('beauty_is_demo_active'); // Desativa flag demo
-     localStorage.removeItem('beauty_trial_start');
-     
-     // Recarrega
-     loadData();
-     window.location.reload(); // Força refresh limpo
-  };
-
-  return {
-    bookings,
-    staff,
-    services,
-    clients,
-    settings,
-    waitingList,
-    stats,
-    isDemo,
-    refresh: loadData,
-    updateBookingStatus,
-    clearDemoData
-  };
+  return { bookings, staff, services, clients, settings, waitingList, stats, isDemo, refresh: loadData, updateBookingStatus };
 };
-    
