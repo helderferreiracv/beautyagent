@@ -1,4 +1,6 @@
 
+'use client';
+
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { CheckCircle2, AlertCircle, X, Sparkles, Info, AlertTriangle } from 'lucide-react';
 
@@ -22,7 +24,6 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const showToast = useCallback((type: ToastType, message: string, description?: string) => {
     const id = Math.random().toString(36).substr(2, 9);
-    // Limit to 3 toasts, keep newest at the bottom
     setToasts(prev => {
         const current = [...prev];
         if (current.length >= 3) current.shift(); 
@@ -49,17 +50,16 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               pointer-events-auto flex items-center gap-4 p-4 pr-12 rounded-2xl shadow-2xl backdrop-blur-xl border w-full
               animate-in slide-in-from-bottom-5 fade-in duration-300 relative overflow-hidden group
               ${toast.type === 'success' ? 'bg-[#1a1a1c]/95 border-primary/30' : 
-                toast.type === 'error' ? 'bg-[#1a1a1c]/95 border-rose-500/30' : 
-                toast.type === 'ai' ? 'bg-[#1a1a1c]/95 border-purple-500/30' : 
+                toast.type === 'error' ? 'bg-[#1a1a1c]/95 border-pink-500/30' : 
+                toast.type === 'ai' ? 'bg-[#1a1a1c]/95 border-pink-400/30' : 
                 'bg-[#1a1a1c]/95 border-white/10'}
             `}
           >
-            {/* Icon Box */}
             <div className={`
               w-10 h-10 rounded-xl flex items-center justify-center shrink-0
               ${toast.type === 'success' ? 'bg-primary/10 text-primary' : 
-                toast.type === 'error' ? 'bg-rose-500/10 text-rose-500' : 
-                toast.type === 'ai' ? 'bg-purple-500/10 text-purple-400' : 
+                toast.type === 'error' ? 'bg-pink-500/10 text-pink-500' : 
+                toast.type === 'ai' ? 'bg-pink-400/10 text-pink-400' : 
                 'bg-zinc-800 text-zinc-400'}
             `}>
               {toast.type === 'success' && <CheckCircle2 size={20} strokeWidth={3} />}
@@ -72,7 +72,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             <div className="flex-grow min-w-0">
               <h4 className={`text-sm font-black uppercase italic tracking-tight leading-none mb-1 ${
                   toast.type === 'success' ? 'text-primary' : 
-                  toast.type === 'error' ? 'text-rose-500' : 
+                  toast.type === 'error' ? 'text-pink-500' : 
                   'text-white'
               }`}>
                   {toast.message}
@@ -87,11 +87,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               <X size={16} />
             </button>
             
-            {/* Elegant Glow */}
             <div className={`absolute -bottom-10 -left-4 w-24 h-24 rounded-full blur-3xl opacity-20 pointer-events-none ${
                 toast.type === 'success' ? 'bg-primary' : 
-                toast.type === 'error' ? 'bg-rose-500' : 
-                toast.type === 'ai' ? 'bg-purple-500' : 'bg-white'
+                toast.type === 'error' ? 'bg-pink-500' : 
+                toast.type === 'ai' ? 'bg-pink-400' : 'bg-white'
             }`}></div>
           </div>
         ))}

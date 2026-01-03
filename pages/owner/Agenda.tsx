@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -211,12 +210,14 @@ export const OwnerAgenda: React.FC = () => {
     const clientBookings = JSON.parse(localStorage.getItem('beauty_bookings') || '[]');
     const ownerBookings = JSON.parse(localStorage.getItem('owner_bookings_db') || '[]');
 
+    const currentServiceName = typeof selectedBooking.service === 'string' ? selectedBooking.service : (selectedBooking.service.name || 'Serviço');
+
     const updateFn = (list: any[]) => list.map(b => 
       b.id === selectedBooking.id 
         ? { 
             ...b, 
-            priceValue: b.priceValue + extraPrice,
-            service: (b.service.name || b.service) + ` + ${upsellData.name}`
+            priceValue: (b.priceValue || 0) + extraPrice,
+            service: currentServiceName + ` + ${upsellData.name}`
           } 
         : b
     );
@@ -384,6 +385,8 @@ export const OwnerAgenda: React.FC = () => {
                                const isWaitingSlot = !booking && hasWaitingList && Math.random() > 0.95;
                                const isBlocked = booking && booking.status === 'blocked';
 
+                               const serviceLabel = booking ? (typeof booking.service === 'string' ? booking.service : (booking.service?.name || 'Serviço')) : '';
+
                                return (
                                   <div key={`${pro.id}-${time}`} className="h-28 lg:h-40 border-b border-white/5 p-1 lg:p-2 relative group transition-colors hover:bg-white/[0.02]">
                                      {booking ? (
@@ -405,7 +408,7 @@ export const OwnerAgenda: React.FC = () => {
                                             >
                                                <div className="w-full min-w-0">
                                                   <p className={`text-xs lg:text-lg font-black uppercase tracking-tight truncate text-white w-full leading-tight`}>{booking.client}</p>
-                                                  <p className="text-[9px] lg:text-sm text-zinc-400 font-bold truncate mt-1 w-full uppercase tracking-wider">{booking.service}</p>
+                                                  <p className="text-[9px] lg:text-sm text-zinc-400 font-bold truncate mt-1 w-full uppercase tracking-wider">{serviceLabel}</p>
                                                </div>
                                                <div className="flex justify-between items-end w-full">
                                                   <span className="text-[10px] lg:text-sm font-mono text-zinc-500 group-hover/card:text-white transition-colors">{booking.priceValue}€</span>
@@ -458,8 +461,10 @@ export const OwnerAgenda: React.FC = () => {
      );
   };
 
+  const selectedServiceLabel = selectedBooking ? (typeof selectedBooking.service === 'string' ? selectedBooking.service : (selectedBooking.service?.name || 'Serviço')) : '';
+
   return (
-    <div className="flex h-screen bg-background overflow-hidden flex-col md:flex-row">
+    <div className="flex h-screen bg-background overflow-hidden flex-col lg:flex-row">
        
        {/* --- SIDEBAR DESKTOP --- */}
        <aside className="w-80 lg:w-96 bg-[#151516] border-r border-white/5 flex-col hidden lg:flex z-40 shrink-0">
@@ -541,19 +546,6 @@ export const OwnerAgenda: React.FC = () => {
                 </button>
              </div>
 
-             {/* View Toggles Mobile */}
-             <div className="flex md:hidden bg-surface p-1 rounded-xl w-full border border-white/5">
-                {['day', 'week', 'month'].map(v => (
-                   <button 
-                     key={v} 
-                     onClick={() => setViewMode(v as any)}
-                     className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === v ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500'}`}
-                   >
-                      {v === 'day' ? 'Dia' : v === 'week' ? 'Sem' : 'Mês'}
-                   </button>
-                ))}
-             </div>
-
              <div className="hidden md:block">
                 <Button onClick={() => handleOpenNew('09:00', staff[0]?.id)} className="px-8 lg:px-10 lg:py-5 text-[10px] lg:text-xs shadow-xl">
                    <Plus size={16} className="mr-2" strokeWidth={3} /> Nova Marcação
@@ -566,7 +558,7 @@ export const OwnerAgenda: React.FC = () => {
 
        </main>
 
-       {/* --- MODAL DETALHES (SLIDE UP) --- */}
+       {/* --- MODAL DETALHES --- */}
        {selectedBooking && (
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4">
              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedBooking(null)}></div>
@@ -590,7 +582,7 @@ export const OwnerAgenda: React.FC = () => {
                    <div className="grid grid-cols-2 gap-4 mb-8">
                       <div className="bg-surface p-4 rounded-2xl border border-white/5">
                          <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Serviço</p>
-                         <p className="text-sm font-black text-white truncate">{selectedBooking.service}</p>
+                         <p className="text-sm font-black text-white truncate">{selectedServiceLabel}</p>
                       </div>
                       <div className="bg-surface p-4 rounded-2xl border border-white/5">
                          <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Hora</p>
@@ -600,9 +592,6 @@ export const OwnerAgenda: React.FC = () => {
 
                    {selectedBooking.status === 'blocked' ? (
                         <div className="space-y-3">
-                            <div className="bg-zinc-800/50 p-4 rounded-2xl border border-white/5 mb-4 text-center">
-                                <p className="text-xs text-zinc-400">Este horário foi bloqueado manualmente.</p>
-                            </div>
                             <button 
                                 onClick={() => handleUpdateStatus('cancelled')}
                                 className="w-full py-4 bg-surface text-white border border-white/10 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white/10 transition-all"
@@ -662,12 +651,6 @@ export const OwnerAgenda: React.FC = () => {
                       placeholder="Nome do cliente"
                    />
                    
-                   {newBookingData.isAiSuggestion && (
-                      <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center gap-3 text-xs text-primary font-bold">
-                         <Sparkles size={14} /> Sugestão da Lista de Espera aplicada
-                      </div>
-                   )}
-
                    <div className="space-y-2">
                       <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Serviço</label>
                       <select 
@@ -700,86 +683,6 @@ export const OwnerAgenda: React.FC = () => {
                    </div>
                    
                    <Button fullWidth type="submit" className="py-5 shadow-xl mt-4">Confirmar Agendamento</Button>
-                </form>
-             </div>
-          </div>
-       )}
-
-       {/* --- MODAL PAUSA RÁPIDA (BLOCK) --- */}
-       {isBlockModalOpen && (
-          <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center sm:p-4">
-             <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setIsBlockModalOpen(false)}></div>
-             <div className="bg-surface w-full max-w-sm rounded-t-[2rem] sm:rounded-[2rem] border border-white/10 shadow-2xl relative z-20 p-8 pb-32 md:pb-8 animate-in slide-in-from-bottom duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                   <div className="p-3 bg-zinc-800 rounded-xl text-zinc-400"><Coffee size={20} /></div>
-                   <h3 className="text-lg font-black text-white uppercase italic tracking-tight">Pausa Rápida</h3>
-                </div>
-                
-                <div className="space-y-6">
-                   <div>
-                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3 block">Motivo</label>
-                      <div className="flex flex-wrap gap-2">
-                         {['Pausa Café', 'Almoço', 'Reunião', 'Admin', 'Outro'].map(r => (
-                            <button
-                               key={r}
-                               onClick={() => setBlockData({...blockData, reason: r})}
-                               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${blockData.reason === r ? 'bg-white text-black border-white' : 'bg-transparent border-white/10 text-zinc-500 hover:text-white'}`}
-                            >
-                               {r}
-                            </button>
-                         ))}
-                      </div>
-                   </div>
-
-                   <div>
-                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3 block">Duração</label>
-                      <div className="flex gap-2">
-                         {[15, 30, 60, 90].map(d => (
-                            <button
-                               key={d}
-                               onClick={() => setBlockData({...blockData, duration: d})}
-                               className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all ${blockData.duration === d ? 'bg-primary text-black border-primary' : 'bg-transparent border-white/10 text-zinc-500 hover:text-white'}`}
-                            >
-                               {d}m
-                            </button>
-                         ))}
-                      </div>
-                   </div>
-
-                   <Button fullWidth onClick={handleSaveBlock}>Bloquear Horário</Button>
-                </div>
-             </div>
-          </div>
-       )}
-
-       {/* --- MODAL UPSELL --- */}
-       {isUpsellModalOpen && (
-          <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center sm:p-4">
-             <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setIsUpsellModalOpen(false)}></div>
-             <div className="bg-surface w-full max-w-sm rounded-t-[2rem] sm:rounded-[2rem] border border-white/10 shadow-2xl relative z-20 p-8 pb-32 md:pb-8 animate-in slide-in-from-bottom duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                   <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400"><ShoppingBag size={20} /></div>
-                   <h3 className="text-lg font-black text-white uppercase italic tracking-tight">Adicionar Extra</h3>
-                </div>
-                
-                <form onSubmit={handleSaveUpsell} className="space-y-5">
-                   <Input 
-                      label="Descrição / Produto" 
-                      placeholder="Ex: Ampola Hidratação"
-                      value={upsellData.name}
-                      onChange={e => setUpsellData({...upsellData, name: e.target.value})}
-                      required
-                   />
-                   <Input 
-                      label="Valor a Adicionar (€)" 
-                      type="number"
-                      placeholder="0.00"
-                      value={upsellData.price}
-                      onChange={e => setUpsellData({...upsellData, price: e.target.value})}
-                      required
-                      icon={<Euro size={16}/>}
-                   />
-                   <Button fullWidth type="submit">Atualizar Conta</Button>
                 </form>
              </div>
           </div>

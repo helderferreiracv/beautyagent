@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -33,6 +32,17 @@ export const useBeautyData = () => {
     todayBookingsCount: 0
   });
 
+  const normalizeServiceName = (s: any): string => {
+    if (typeof s === 'string') return s;
+    if (s && typeof s === 'object') {
+      // Se for um objeto de serviço, extrai o nome
+      if (s.name && typeof s.name === 'string') return s.name;
+      // Se for um componente React acidental, tenta não crashar
+      if (s.$$typeof) return 'Serviço Personalizado';
+    }
+    return 'Serviço';
+  };
+
   const loadData = useCallback(() => {
     if (typeof window === 'undefined') return;
 
@@ -58,10 +68,12 @@ export const useBeautyData = () => {
       time: b.time,
       client: b.userName || 'Cliente App',
       phone: b.userPhone,
-      service: b.service.name, 
-      priceValue: parseFloat(b.service.price?.toString().replace('€','')) || 0,
+      service: normalizeServiceName(b.service), 
+      priceValue: typeof b.service?.price === 'string' 
+        ? parseFloat(b.service.price.replace('€','').replace(',','.')) 
+        : (parseFloat(b.service?.price) || 0),
       status: b.status,
-      proId: b.professional === 'agent' ? 'p1' : b.professional.id,
+      proId: b.professional === 'agent' ? 'p1' : (b.professional?.id || 'p1'),
       source: 'app',
       paymentMethod: b.paymentMethod
     }));
@@ -72,8 +84,8 @@ export const useBeautyData = () => {
       time: b.time,
       client: b.client,
       phone: b.phone,
-      service: b.service,
-      priceValue: b.priceValue || 0,
+      service: normalizeServiceName(b.service),
+      priceValue: parseFloat(b.priceValue) || 0,
       status: b.status,
       proId: b.proId,
       source: 'manual',
@@ -104,8 +116,11 @@ export const useBeautyData = () => {
 
     allBookings.forEach(b => {
        if (b.status === 'completed') {
-          totalRev += b.priceValue;
-          if (new Date(b.date).getMonth() === currentMonth) monthRev += b.priceValue;
+          totalRev += (b.priceValue || 0);
+          const bDate = new Date(b.date);
+          if (!isNaN(bDate.getTime()) && bDate.getMonth() === currentMonth) {
+            monthRev += (b.priceValue || 0);
+          }
        }
        if (b.date === today && b.status !== 'cancelled') todayCount++;
     });
