@@ -1,22 +1,17 @@
+'use client';
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, KeyRound, ShieldCheck, CheckCircle2, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, KeyRound, CheckCircle2, Sparkles } from 'lucide-react';
 import { Button } from '../../components/Button';
-import { Input } from '../../components/Input';
 
 export const ClientOTP: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // --- TODO: INTEGRATION TWILIO ---
-    // 1. Chamar endpoint backend: /api/verify-otp { code, phone }
-    // 2. Se 200 OK -> Prosseguir
-    // 3. Se 400 ERROR -> setError('Código incorreto')
     
     if (code === '123456') {
       const savedUser = localStorage.getItem('beauty_user');
@@ -25,20 +20,16 @@ export const ClientOTP: React.FC = () => {
         localStorage.setItem('beauty_user', JSON.stringify({ ...user, verified: true }));
       }
       
-      // Lógica de Redirecionamento Inteligente
       const pendingWaitlist = localStorage.getItem('beauty_pending_waitlist');
       const draft = localStorage.getItem('beauty_booking_draft');
 
       if (pendingWaitlist) {
-        // Se estava a tentar entrar na Waiting List, devolve lá com action auto_join
         const { date } = JSON.parse(pendingWaitlist);
-        navigate(`/client/waiting?date=${date}&action=auto_join`);
+        router.push(`/client/waiting?date=${date}&action=auto_join`);
       } else if (draft) {
-        // Se tinha um carrinho de compras normal
-        navigate('/client/confirm');
+        router.push('/client/confirm');
       } else {
-        // Fallback normal
-        navigate('/client/my-bookings');
+        router.push('/client/my-bookings');
       }
     } else {
       setError('Código inválido. Tenta novamente.');
@@ -48,10 +39,10 @@ export const ClientOTP: React.FC = () => {
   return (
     <div className="max-w-md mx-auto py-6 px-4 pb-32 animate-fade-in">
       <button 
-        onClick={() => navigate('/client/auth')} 
+        onClick={() => router.back()} 
         className="mb-8 text-muted hover:text-white flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all group"
       >
-        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Alterar Dados
+        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Voltar
       </button>
 
       <div className="mb-10">
@@ -62,14 +53,9 @@ export const ClientOTP: React.FC = () => {
       </div>
 
       <div className="bg-surface rounded-[2.5rem] p-10 border border-white/5 space-y-10 shadow-2xl relative overflow-hidden">
-        {/* Glow Decorativo */}
         <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
         
-        {/* Bloco Acesso Rápido Demo - Redesenhado */}
         <div className="bg-background/40 border border-primary/20 rounded-[2rem] p-6 text-center relative group overflow-hidden">
-          <div className="absolute -right-2 -top-2 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Sparkles size={40} className="text-primary" />
-          </div>
           <p className="text-[9px] text-primary uppercase tracking-[0.3em] mb-3 font-black italic">Acesso Rápido Demo</p>
           <div className="flex items-center justify-center gap-4 bg-zinc-900/50 py-3 rounded-xl border border-white/5">
              <span className="text-white font-mono font-black text-3xl tracking-[0.25em] ml-2">123456</span>
@@ -110,10 +96,6 @@ export const ClientOTP: React.FC = () => {
             Validar
           </Button>
         </form>
-
-        <button className="w-full text-[9px] font-black text-zinc-600 hover:text-white uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
-          Não recebeste o SMS? <span className="text-primary">Reenviar Código</span>
-        </button>
       </div>
     </div>
   );

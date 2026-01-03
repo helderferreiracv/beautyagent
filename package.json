@@ -18,8 +18,7 @@
     "tailwind-merge": "^2.3.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
-    "canvas-confetti": "^1.9.3",
-    "react-router-dom": "6.22.3"
+    "canvas-confetti": "^1.9.3"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",

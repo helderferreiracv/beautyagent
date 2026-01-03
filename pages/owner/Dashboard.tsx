@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { 
   Bell, 
   LayoutGrid, 
@@ -39,7 +38,7 @@ const SidebarLink = ({ icon: Icon, label, active = false, onClick, count }: any)
 );
 
 const KPICard = ({ title, value, change, isPositive, prefix = '' }: any) => (
-  <div className="bg-[#343436] p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden group hover:border-[#ebff57]/20 transition-all shadow-lg">
+  <div className="bg-[#242426] p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden group hover:border-[#ebff57]/20 transition-all shadow-lg">
     <div className="absolute top-0 right-0 w-32 h-32 bg-white/[0.01] rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-[#ebff57]/[0.02] transition-colors"></div>
     <h3 className="text-4xl lg:text-5xl font-black text-white mb-3 tracking-tighter relative z-10 italic">{prefix}{value}</h3>
     <div className="flex items-center justify-between relative z-10">
@@ -52,7 +51,7 @@ const KPICard = ({ title, value, change, isPositive, prefix = '' }: any) => (
 );
 
 export const OwnerDashboard: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { bookings, stats, isDemo } = useBeautyData();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [unreadCount, setUnreadCount] = useState(0);
@@ -72,8 +71,7 @@ export const OwnerDashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex h-full w-full bg-[#29292b] font-sans text-[#f1f0e6] overflow-hidden">
-      {/* Sidebar */}
+    <div className="flex h-full w-full bg-[#1a1a1c] font-sans text-[#f1f0e6] overflow-hidden">
       <aside className="w-72 lg:w-80 bg-[#1a1a1c] border-r border-white/5 flex flex-col shrink-0 z-30 hidden md:flex">
         <div className="h-24 flex items-center px-8">
           <div className="flex items-center gap-3">
@@ -86,14 +84,14 @@ export const OwnerDashboard: React.FC = () => {
         
         <nav className="flex-1 py-10 space-y-2">
           <SidebarLink icon={LayoutGrid} label="Início" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <SidebarLink icon={CalendarIcon} label="Agenda Mestre" onClick={() => navigate('/owner/agenda')} />
-          <SidebarLink icon={Users} label="CRM Clientes" onClick={() => navigate('/owner/clients')} />
-          <SidebarLink icon={TrendingUp} label="Relatórios" onClick={() => navigate('/owner/reports')} />
-          <SidebarLink icon={Settings} label="Configurações" onClick={() => navigate('/owner/settings')} />
+          <SidebarLink icon={CalendarIcon} label="Agenda Mestre" onClick={() => router.push('/owner/agenda')} />
+          <SidebarLink icon={Users} label="CRM Clientes" onClick={() => router.push('/owner/clients')} />
+          <SidebarLink icon={TrendingUp} label="Relatórios" onClick={() => router.push('/owner/reports')} />
+          <SidebarLink icon={Settings} label="Configurações" onClick={() => router.push('/owner/settings')} />
         </nav>
 
         <div className="p-8 border-t border-white/5">
-           <button onClick={() => navigate('/')} className="flex items-center gap-4 text-zinc-500 hover:text-rose-400 text-xs font-black uppercase tracking-widest w-full transition-colors group">
+           <button onClick={() => router.push('/')} className="flex items-center gap-4 text-zinc-500 hover:text-rose-400 text-xs font-black uppercase tracking-widest w-full transition-colors group">
               <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" /> Sair do Painel
            </button>
         </div>
@@ -110,7 +108,7 @@ export const OwnerDashboard: React.FC = () => {
             <button onClick={() => setIsAiOpen(true)} className="flex items-center gap-3 px-6 py-2.5 bg-[#ebff57] text-black rounded-full font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-[#ebff57]/10">
                <Sparkles size={14} /> AI Insights
             </button>
-            <button onClick={() => navigate('/owner/messages')} className="p-3 bg-[#1a1a1c] border border-white/10 rounded-2xl text-zinc-400 relative hover:text-white transition-colors">
+            <button onClick={() => router.push('/owner/messages')} className="p-3 bg-[#1a1a1c] border border-white/10 rounded-2xl text-zinc-400 relative hover:text-white transition-colors">
               <Bell size={20} />
               {unreadCount > 0 && <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-[#1a1a1c]"></span>}
             </button>
@@ -119,17 +117,14 @@ export const OwnerDashboard: React.FC = () => {
 
         <div className="flex-1 overflow-y-auto p-8 lg:p-12">
           <div className="max-w-7xl mx-auto space-y-12">
-            
-            {/* KPI Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <KPICard title="Total de Clientes" value={stats.totalClients} change="+12% este mês" isPositive={true} />
               <KPICard title="Receita (Mês)" value={stats.monthlyRevenue} prefix="€" change="Em crescimento" isPositive={true} />
               <KPICard title="Visitas Hoje" value={stats.todayBookingsCount} change="Agenda Completa" isPositive={true} />
             </div>
             
-            {/* Action Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-               <div onClick={() => navigate('/owner/agenda')} className="bg-[#343436] p-10 rounded-[3rem] border border-white/5 cursor-pointer hover:border-[#ebff57]/40 transition-all group relative overflow-hidden">
+               <div onClick={() => router.push('/owner/agenda')} className="bg-[#242426] p-10 rounded-[3rem] border border-white/5 cursor-pointer hover:border-[#ebff57]/40 transition-all group relative overflow-hidden">
                   <div className="absolute top-10 right-10 opacity-10 group-hover:opacity-20 transition-opacity">
                      <CalendarIcon size={80} />
                   </div>
@@ -140,7 +135,7 @@ export const OwnerDashboard: React.FC = () => {
                   </div>
                </div>
 
-               <div onClick={() => navigate('/owner/reports')} className="bg-[#343436] p-10 rounded-[3rem] border border-white/5 cursor-pointer hover:border-[#ebff57]/40 transition-all group relative overflow-hidden">
+               <div onClick={() => router.push('/owner/reports')} className="bg-[#242426] p-10 rounded-[3rem] border border-white/5 cursor-pointer hover:border-[#ebff57]/40 transition-all group relative overflow-hidden">
                   <div className="absolute top-10 right-10 opacity-10 group-hover:opacity-20 transition-opacity">
                      <TrendingUp size={80} />
                   </div>
@@ -151,7 +146,6 @@ export const OwnerDashboard: React.FC = () => {
                   </div>
                </div>
             </div>
-
           </div>
         </div>
       </main>

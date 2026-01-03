@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { 
   Sparkles, 
   ArrowRight, 
@@ -21,7 +20,7 @@ import { Input } from './Input';
 import { useToast } from './Toast';
 
 export const LandingContent = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { showToast } = useToast();
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -30,7 +29,7 @@ export const LandingContent = () => {
     e.preventDefault();
     if (adminPassword === '437501') {
       sessionStorage.setItem('admin_auth', 'true');
-      navigate('/admin/global');
+      router.push('/admin/global');
       showToast('success', 'Acesso Mestre Concedido', 'Consola Global Ativa.');
     } else {
       showToast('error', 'Falha de Segurança', 'Chave inválida.');
@@ -39,11 +38,9 @@ export const LandingContent = () => {
   };
 
   return (
-    <div className="relative overflow-x-hidden bg-[#29292b]">
-      {/* GLOW DECORATIONS */}
+    <div className="relative overflow-x-hidden bg-[#1a1a1c]">
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[120vw] h-[80vh] bg-[#ebff57]/5 rounded-b-[100%] blur-[120px] pointer-events-none z-0"></div>
       
-      {/* HERO SECTION */}
       <section className="relative pt-48 pb-32 px-6 z-10 text-center max-w-6xl mx-auto">
          <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/5 border border-white/10 text-xs font-black uppercase tracking-[0.2em] text-[#ebff57] mb-12 animate-fade-in shadow-2xl backdrop-blur-md">
             <Bot size={16} /> Intelligence Core 3.2
@@ -62,7 +59,7 @@ export const LandingContent = () => {
          </p>
 
          <div className="flex flex-col items-center gap-10">
-            <Button onClick={() => navigate('/trial/register')} className="w-full sm:w-auto px-16 py-8 text-base shadow-[0_0_50px_rgba(235,255,87,0.2)] hover:scale-105 transition-transform">
+            <Button onClick={() => router.push('/trial/register')} className="w-full sm:w-auto px-16 py-8 text-base shadow-[0_0_50px_rgba(235,255,87,0.2)] hover:scale-105 transition-transform">
                Começar Trial Grátis <ArrowRight className="ml-2" size={22} strokeWidth={3} />
             </Button>
             
@@ -77,15 +74,14 @@ export const LandingContent = () => {
          </div>
       </section>
 
-      {/* MINI FEATURES */}
       <section className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
          {[
             { icon: Calendar, title: "Agenda Smart", desc: "A nossa AI organiza os horários para evitar buracos e maximizar o lucro." },
             { icon: Star, title: "Glow Club", desc: "Fidelização automática que retém clientes e incentiva o retorno constante." },
             { icon: BarChart3, title: "Relatórios Reais", desc: "Métricas precisas de faturação, comissões e produtividade da equipa." }
          ].map((f, i) => (
-            <div key={i} className="bg-[#343436] p-10 rounded-[3rem] border border-white/5 hover:border-[#ebff57]/20 transition-all group">
-               <div className="w-14 h-14 bg-[#29292b] rounded-2xl flex items-center justify-center text-[#ebff57] mb-8 border border-white/5 group-hover:scale-110 transition-transform">
+            <div key={i} className="bg-[#242426] p-10 rounded-[3rem] border border-white/5 hover:border-[#ebff57]/20 transition-all group">
+               <div className="w-14 h-14 bg-[#1a1a1c] rounded-2xl flex items-center justify-center text-[#ebff57] mb-8 border border-white/5 group-hover:scale-110 transition-transform">
                   <f.icon size={28} />
                </div>
                <h3 className="text-xl font-black text-white uppercase italic mb-3 tracking-tight">{f.title}</h3>
@@ -94,7 +90,6 @@ export const LandingContent = () => {
          ))}
       </section>
 
-      {/* FOOTER */}
       <footer className="border-t border-white/5 bg-[#1a1a1c] pt-32 pb-20 px-6 relative z-10">
          <div className="max-w-7xl mx-auto flex flex-col items-center">
             <div className="flex items-center gap-3 mb-10 opacity-30">
@@ -113,11 +108,10 @@ export const LandingContent = () => {
          </div>
       </footer>
 
-      {/* ADMIN MODAL */}
       {isAdminModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={() => setIsAdminModalOpen(false)}></div>
-          <div className="bg-[#343436] w-full max-w-[380px] rounded-[3rem] p-10 relative z-10 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-[#242426] w-full max-w-[380px] rounded-[3rem] p-10 relative z-10 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200">
              <div className="flex justify-between items-center mb-10">
                 <div className="w-12 h-12 rounded-2xl bg-black/20 flex items-center justify-center text-[#ebff57]">
                    <Lock size={20} />

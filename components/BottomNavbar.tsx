@@ -1,6 +1,7 @@
+'use client';
 
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -11,17 +12,16 @@ import {
 } from 'lucide-react';
 
 export const BottomNavbar: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const path = location.pathname;
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const isOwner = path.startsWith('/owner');
-  const isStaff = path.startsWith('/staff');
+  const isOwner = pathname?.startsWith('/owner');
+  const isStaff = pathname?.startsWith('/staff');
 
   if (!isOwner && !isStaff) return null;
 
   const handleAddBooking = () => {
-    navigate('/owner/agenda?action=new');
+    router.push('/owner/agenda?action=new');
   };
 
   const ownerItems = [
@@ -57,13 +57,13 @@ export const BottomNavbar: React.FC = () => {
              );
           }
 
-          const isActive = path === item.href;
+          const isActive = pathname === item.href;
           const Icon = item.icon;
           
           return (
             <button
               key={item.href || idx}
-              onClick={() => item.href && navigate(item.href)}
+              onClick={() => item.href && router.push(item.href)}
               className={`
                 relative w-12 h-12 rounded-full flex flex-col items-center justify-center transition-all duration-300 active:scale-90 group
                 ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}
