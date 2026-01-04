@@ -1,6 +1,7 @@
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, 
   Download, 
@@ -25,23 +26,12 @@ import { Button } from '../../components/Button';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const ReportSkeleton = () => (
-  <div className="space-y-12 animate-fade-in">
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-      {[1, 2, 3, 4].map(i => (
-        <div key={i} className="h-48 bg-surface rounded-[2.5rem] border border-white/5 animate-pulse"></div>
-      ))}
-    </div>
-    <div className="h-96 bg-surface rounded-[3rem] border border-white/5 animate-pulse"></div>
-  </div>
-);
-
 interface UnifiedBooking {
   id: string;
   date: string;
   time: string;
   client: string;
-  service: string;
+  service: string; // Garantido como string primitiva
   price: number;
   proName: string;
   status: string;
@@ -62,7 +52,7 @@ const formatCurrency = (value: number) => {
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 export const OwnerReports: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const now = new Date();
   
   const [loading, setLoading] = useState(true);
@@ -72,14 +62,11 @@ export const OwnerReports: React.FC = () => {
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [bookings, setBookings] = useState<UnifiedBooking[]>([]);
-  const [showCommissions, setShowCommissions] = useState(false);
   const [salonName, setSalonName] = useState('Beauty Salon');
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1200)); // Simulate heavy load
-
       const settings = JSON.parse(localStorage.getItem('beauty_settings') || '{}');
       if (settings.salonName) setSalonName(settings.salonName);
 
@@ -98,12 +85,12 @@ export const OwnerReports: React.FC = () => {
         id: b.id,
         date: b.date,
         time: b.time,
-        client: b.userName || 'Cliente App',
-        service: b.service.name,
-        price: parsePrice(b.service.price),
-        proName: b.professional === 'agent' ? 'Agente AI' : (b.professional.name || 'Staff'),
+        client: String(b.userName || 'Cliente App'),
+        service: String(b.service?.name || b.service || 'Serviço'), // Prevenção de Erro #31
+        price: parsePrice(b.service?.price || 0),
+        proName: b.professional === 'agent' ? 'Agente AI' : String(b.professional?.name || 'Staff'),
         status: b.status,
-        commissionRate: getCommission(b.professional === 'agent' ? 'p1' : b.professional.id),
+        commissionRate: getCommission(b.professional === 'agent' ? 'p1' : (b.professional?.id || 'p1')),
         source: 'app'
       }));
 
@@ -112,8 +99,8 @@ export const OwnerReports: React.FC = () => {
         id: b.id,
         date: b.date,
         time: b.time,
-        client: b.client,
-        service: b.service,
+        client: String(b.client || 'Cliente'),
+        service: String(b.service || 'Serviço'), // Prevenção de Erro #31
         price: b.priceValue || 45,
         proName: getStaffName(b.proId),
         status: b.status,
@@ -132,136 +119,82 @@ export const OwnerReports: React.FC = () => {
     return bookings.filter(b => {
       if (b.status === 'cancelled') return false;
       const bDate = new Date(b.date);
-      bDate.setHours(0,0,0,0);
       if (periodMode === 'month') {
         return bDate.getMonth() === selectedMonth && bDate.getFullYear() === selectedYear;
-      } else {
-        if (!customStart || !customEnd) return true;
-        const start = new Date(customStart); start.setHours(0,0,0,0);
-        const end = new Date(customEnd); end.setHours(23,59,59,999);
-        return bDate >= start && bDate <= end;
       }
-    }).sort((a, b) => new Date(`${b.date}T${b.time}`).getTime() - new Date(`${a.date}T${a.time}`).getTime());
-  }, [bookings, periodMode, selectedMonth, selectedYear, customStart, customEnd]);
+      return true;
+    }).sort((a, b) => b.date.localeCompare(a.date));
+  }, [bookings, periodMode, selectedMonth, selectedYear]);
 
   const stats = useMemo(() => {
-    let realizedRevenue = 0;
-    let forecastRevenue = 0;
-    let totalCommissions = 0;
-    let noShows = 0;
-    let uniqueClients = new Set();
-
+    let revenue = 0;
+    let occupancy = 0;
     filteredData.forEach(b => {
-      uniqueClients.add(b.client);
-      if (b.status === 'completed') {
-        realizedRevenue += b.price;
-        totalCommissions += b.price * (b.commissionRate / 100);
-      } else if (b.status === 'confirmed') {
-        forecastRevenue += b.price;
-      } else if (b.status === 'no-show') {
-        noShows++;
-      }
+      if (b.status === 'completed') revenue += b.price;
+      if (b.status !== 'cancelled') occupancy++;
     });
-
-    const occupancyRate = filteredData.length > 0 ? Math.min(100, Math.round((filteredData.length / 100) * 100)) : 0;
-
-    return { realizedRevenue, forecastRevenue, totalCommissions, noShows, totalBookings: filteredData.length, uniqueClients: uniqueClients.size, occupancyRate };
+    return { revenue, occupancy: Math.min(100, Math.round(occupancy * 2)) };
   }, [filteredData]);
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
+    autoTable(doc, {
+      head: [['Data', 'Cliente', 'Serviço', 'Valor', 'Estado']],
+      body: filteredData.map(b => [b.date, b.client, b.service, `${b.price}€`, b.status])
+    });
     doc.save(`Relatorio_${salonName.replace(/\s/g, '_')}.pdf`);
   };
 
   return (
     <div className="min-h-screen bg-background text-white pb-32">
-      <div className="px-6 md:px-12 lg:px-16 pt-10 lg:pt-14 pb-8 bg-[#1a1a1c] border-b border-white/5">
-         <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="px-6 py-10 bg-[#1a1a1c] border-b border-white/5">
+         <div className="w-full flex justify-between items-center">
             <div className="flex items-center gap-6">
-               <button onClick={() => navigate('/owner/dashboard')} className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors text-zinc-400 hover:text-white">
+               <button onClick={() => router.push('/owner/dashboard')} className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 text-zinc-400">
                   <ArrowLeft size={24} />
                </button>
-               <div>
-                  <h1 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter text-white flex items-center gap-4">
-                     Relatórios <Sparkles className="text-primary" size={32} />
-                  </h1>
-                  <p className="text-[11px] lg:text-xs font-bold text-zinc-500 uppercase tracking-[0.3em] mt-1">Sincronização Ativa • 100% Real</p>
-               </div>
+               <h1 className="text-3xl font-black italic uppercase tracking-tighter text-white">Relatórios</h1>
             </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-               <div className="flex items-center bg-surface border border-white/10 rounded-2xl p-1">
-                  <button onClick={() => setPeriodMode('month')} className={`px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${periodMode === 'month' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}>Mensal</button>
-                  <button onClick={() => setPeriodMode('custom')} className={`px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${periodMode === 'custom' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}>Custom</button>
-               </div>
-               {periodMode === 'month' && (
-                  <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} className="bg-surface border border-white/10 rounded-2xl px-5 py-3 text-xs font-bold text-white uppercase outline-none">
-                     {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-                  </select>
-               )}
-            </div>
+            <Button variant="outline" onClick={handleExportPDF} className="h-10 text-[11px]">Download PDF</Button>
          </div>
       </div>
 
-      <div className="w-full px-6 md:px-12 lg:px-16 py-10 lg:py-14 animate-fade-in">
-         {loading ? <ReportSkeleton /> : (
-            <>
-               <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12">
-                  <div className="bg-surface border border-white/5 rounded-[2.5rem] p-8 relative overflow-hidden group hover:border-primary/30 transition-all shadow-xl">
-                     <p className="text-[11px] font-black text-primary uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><CheckCircle2 size={14}/> Faturação Caixa</p>
-                     <h3 className="text-3xl lg:text-5xl font-black text-white italic tracking-tighter leading-none mb-2">{formatCurrency(stats.realizedRevenue)}</h3>
-                  </div>
-                  <div className="bg-surface border border-white/5 rounded-[2.5rem] p-8 relative overflow-hidden group hover:border-rose-400/30 transition-all shadow-xl">
-                     <p className="text-[11px] font-black text-rose-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><Wallet size={14}/> Previsto em Agenda</p>
-                     <h3 className="text-3xl lg:text-5xl font-black text-white italic tracking-tighter leading-none mb-2">{formatCurrency(stats.forecastRevenue)}</h3>
-                  </div>
-                  <div className="bg-surface border border-white/5 rounded-[2.5rem] p-8 relative overflow-hidden group transition-all shadow-xl">
-                     <p className="text-[11px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><PieChart size={14}/> Ocupação</p>
-                     <h3 className="text-3xl lg:text-5xl font-black text-white italic tracking-tighter leading-none mb-2">{stats.occupancyRate}%</h3>
-                  </div>
-                  <div className="bg-surface border border-white/5 rounded-[2.5rem] p-8 relative overflow-hidden group transition-all shadow-xl">
-                     <p className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><Ban size={14}/> No-Shows</p>
-                     <h3 className="text-3xl lg:text-5xl font-black text-white italic tracking-tighter leading-none mb-2">{stats.noShows}</h3>
-                  </div>
-               </div>
+      <div className="w-full px-6 py-10 animate-fade-in">
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-surface border border-white/5 rounded-[2.5rem] p-8">
+               <p className="text-[11px] font-black text-primary uppercase tracking-[0.2em] mb-4">Faturação Caixa</p>
+               <h3 className="text-4xl font-black text-white italic">{formatCurrency(stats.revenue)}</h3>
+            </div>
+            <div className="bg-surface border border-white/5 rounded-[2.5rem] p-8">
+               <p className="text-[11px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4">Ocupação</p>
+               <h3 className="text-4xl font-black text-white italic">{stats.occupancy}%</h3>
+            </div>
+         </div>
 
-               <div className="bg-surface rounded-[3rem] border border-white/5 overflow-hidden shadow-2xl">
-                  <div className="p-8 lg:p-10 border-b border-white/5 flex justify-between items-center bg-[#1a1a1c]">
-                     <h3 className="text-lg font-black text-white uppercase italic tracking-tight">Tabela de Movimentos</h3>
-                     <Button variant="outline" onClick={handleExportPDF} className="h-10 text-[11px]">Download PDF</Button>
-                  </div>
-                  <div className="overflow-x-auto">
-                     <table className="w-full text-left">
-                        <thead>
-                           <tr className="bg-white/[0.02]">
-                              <th className="px-8 py-6 text-[11px] font-black text-zinc-500 uppercase tracking-widest">Data / Hora</th>
-                              <th className="px-8 py-6 text-[11px] font-black text-zinc-500 uppercase tracking-widest">Cliente</th>
-                              <th className="px-8 py-6 text-[11px] font-black text-zinc-500 uppercase tracking-widest">Serviço</th>
-                              <th className="px-8 py-6 text-[11px] font-black text-zinc-500 uppercase tracking-widest text-right">Valor</th>
-                              <th className="px-8 py-6 text-[11px] font-black text-zinc-500 uppercase tracking-widest text-center">Estado</th>
-                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                           {filteredData.map(row => (
-                              <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
-                                 <td className="px-8 py-6">
-                                    <span className="block text-[12px] font-black text-white">{new Date(row.date).toLocaleDateString('pt-PT')}</span>
-                                    <span className="text-[11px] text-zinc-500 font-bold uppercase">{row.time}</span>
-                                 </td>
-                                 <td className="px-8 py-6 font-bold text-[12px] uppercase">{row.client}</td>
-                                 <td className="px-8 py-6 text-[12px] text-zinc-400">{row.service}</td>
-                                 <td className="px-8 py-6 text-right font-black text-[12px] text-white italic">{row.price.toFixed(2)}€</td>
-                                 <td className="px-8 py-6 text-center">
-                                    <span className={`text-[11px] font-black px-3 py-1 rounded-lg uppercase border ${row.status === 'completed' ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' : 'border-white/10 text-zinc-500'}`}>{row.status}</span>
-                                 </td>
-                              </tr>
-                           ))}
-                        </tbody>
-                     </table>
-                  </div>
-               </div>
-            </>
-         )}
+         <div className="bg-surface rounded-[3rem] border border-white/5 overflow-hidden shadow-2xl">
+            <div className="overflow-x-auto">
+               <table className="w-full text-left">
+                  <thead>
+                     <tr className="bg-white/[0.02]">
+                        <th className="px-8 py-6 text-[11px] font-black text-zinc-500 uppercase tracking-widest">Data</th>
+                        <th className="px-8 py-6 text-[11px] font-black text-zinc-500 uppercase tracking-widest">Cliente</th>
+                        <th className="px-8 py-6 text-[11px] font-black text-zinc-500 uppercase tracking-widest">Serviço</th>
+                        <th className="px-8 py-6 text-[11px] font-black text-zinc-500 uppercase tracking-widest text-right">Valor</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                     {filteredData.map(row => (
+                        <tr key={row.id} className="hover:bg-white/[0.02]">
+                           <td className="px-8 py-6 font-bold text-[12px]">{row.date}</td>
+                           <td className="px-8 py-6 font-bold text-[12px] uppercase">{row.client}</td>
+                           <td className="px-8 py-6 text-[12px] text-zinc-400">{row.service}</td>
+                           <td className="px-8 py-6 text-right font-black text-[12px] text-white italic">{row.price.toFixed(2)}€</td>
+                        </tr>
+                     ))}
+                  </tbody>
+               </table>
+            </div>
+         </div>
       </div>
     </div>
   );

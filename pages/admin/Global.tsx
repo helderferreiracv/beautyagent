@@ -1,6 +1,7 @@
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { 
   ShieldCheck, 
   Building2, 
@@ -54,7 +55,7 @@ const INITIAL_DATA: SalonInstance[] = [
 ];
 
 export const AdminGlobal: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { showToast } = useToast();
   const [salons, setSalons] = useState<SalonInstance[]>(INITIAL_DATA);
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,8 +68,8 @@ export const AdminGlobal: React.FC = () => {
 
   useEffect(() => {
     const auth = sessionStorage.getItem('admin_auth');
-    if (!auth) navigate('/');
-  }, [navigate]);
+    if (!auth) router.push('/');
+  }, [router]);
 
   const stats = useMemo(() => {
     const active = salons.filter(s => s.status === 'Ativo');
@@ -264,7 +265,7 @@ export const AdminGlobal: React.FC = () => {
                            <div className="flex items-center justify-end gap-2">
                               <button onClick={() => handleToggleVIP(salon.id)} title="Toggle VIP" className={`p-2.5 rounded-xl border transition-all ${salon.subType === 'VIP' ? 'bg-amber-500 text-background' : 'bg-white/5 border-white/5 text-muted hover:text-amber-500'}`}><Crown size={16} /></button>
                               <button onClick={() => handleToggleSuspend(salon.id)} title="Suspender/Ativar" className={`p-2.5 rounded-xl border transition-all ${salon.status === 'Suspenso' ? 'bg-red-500 text-white' : 'bg-white/5 border-white/5 text-muted hover:text-red-500'}`}><Ban size={16} /></button>
-                              <button onClick={() => navigate('/owner/dashboard')} title="Entrar no Salão" className="p-2.5 bg-white/5 border border-white/5 rounded-xl text-muted hover:text-white transition-all"><ExternalLink size={16} /></button>
+                              <button onClick={() => router.push('/owner/dashboard')} title="Entrar no Salão" className="p-2.5 bg-white/5 border border-white/5 rounded-xl text-muted hover:text-white transition-all"><ExternalLink size={16} /></button>
                            </div>
                         </td>
                      </tr>
@@ -272,70 +273,6 @@ export const AdminGlobal: React.FC = () => {
                </tbody>
             </table>
          </div>
-      </div>
-
-      {/* MODAL ADICIONAR SALÃO */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-background/98 backdrop-blur-xl animate-fade-in" onClick={() => setIsAddModalOpen(false)}></div>
-           <div className="bg-surface w-full max-w-md rounded-[3rem] p-10 border border-white/10 shadow-2xl relative animate-in zoom-in-95 max-h-[85vh] overflow-y-auto pb-40">
-              <div className="flex justify-between items-center mb-8">
-                 <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">Novo Salão Manual</h3>
-                 <button onClick={() => setIsAddModalOpen(false)} className="p-2 text-muted hover:text-white"><X size={24}/></button>
-              </div>
-              <form onSubmit={handleAddSalon} className="space-y-6">
-                 <Input label="Nome do Estabelecimento" required value={newSalon.name} onChange={e => setNewSalon({...newSalon, name: e.target.value})} placeholder="EX: STUDIO ELITE..." />
-                 <Input label="Telemóvel do Dono" required value={newSalon.ownerPhone} onChange={e => setNewSalon({...newSalon, ownerPhone: e.target.value})} placeholder="9XXXXXXXX" />
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Nível de Subscrição</label>
-                    <select 
-                      value={newSalon.subType}
-                      onChange={e => setNewSalon({...newSalon, subType: e.target.value as SubscriptionType})}
-                      className="w-full bg-background border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary outline-none appearance-none font-bold uppercase text-[11px] tracking-widest"
-                    >
-                      <option value="Trial">Trial (7 dias)</option>
-                      <option value="Mensal">Plano Mensal</option>
-                      <option value="Anual">Plano Anual</option>
-                      <option value="VIP">VIP Isento</option>
-                    </select>
-                 </div>
-                 <Button fullWidth type="submit" className="py-5 shadow-xl">Ativar Instância</Button>
-              </form>
-           </div>
-        </div>
-      )}
-
-      {/* MODAL BROADCAST */}
-      {isBroadcastModalOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-background/98 backdrop-blur-xl animate-fade-in" onClick={() => setIsBroadcastModalOpen(false)}></div>
-           <div className="bg-surface w-full max-w-md rounded-[3rem] p-10 border border-white/10 shadow-2xl relative animate-in zoom-in-95 max-h-[85vh] overflow-y-auto pb-40">
-              <div className="flex justify-between items-center mb-8">
-                 <div className="flex items-center gap-3">
-                    <Megaphone className="text-primary" size={24} />
-                    <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">Mensagem Global</h3>
-                 </div>
-                 <button onClick={() => setIsBroadcastModalOpen(false)} className="p-2 text-muted hover:text-white"><X size={24}/></button>
-              </div>
-              <div className="space-y-6">
-                 <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Conteúdo do Aviso</label>
-                    <textarea 
-                      className="bg-background border border-white/10 rounded-2xl p-5 text-white placeholder-zinc-800 outline-none focus:border-primary/40 min-h-[150px] font-bold text-sm"
-                      placeholder="ESCREVA AQUI O AVISO PARA TODOS OS SALÕES..."
-                      value={broadcastMsg}
-                      onChange={e => setBroadcastMsg(e.target.value)}
-                    />
-                 </div>
-                 <Button fullWidth onClick={handleSendBroadcast}>Transmitir para Rede</Button>
-                 <p className="text-[9px] text-zinc-600 font-bold uppercase text-center tracking-widest">Este aviso aparecerá no topo do dashboard de cada salão ativo.</p>
-              </div>
-           </div>
-        </div>
-      )}
-
-      <div className="fixed bottom-12 left-1/2 -translate-x-1/2 text-center opacity-30 pointer-events-none">
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600 italic">BeautyAgent Enterprise Infrastructure • v2.6.4</p>
       </div>
     </div>
   );

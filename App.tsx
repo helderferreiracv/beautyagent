@@ -1,105 +1,62 @@
+import { useEffect, useState } from "react";
+import Layout from "./components/Layout";
 
-import React from 'react';
-import { HashRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import { LandingPage } from './pages/Landing';
-import { ToastProvider } from './components/Toast';
+import Landing from "./pages/Landing";
+import Login from "./pages/admin/Login";
+import ServiceSelection from "./pages/client/ServiceSelection";
+import { ClientCalendar } from "./pages/client/Calendar";
+import TimeSelection from "./pages/client/TimeSelection";
+import ClientConfirmation from "./pages/client/Confirmation";
 
-// Client Flow
-import { ClientServiceSelection } from './pages/client/ServiceSelection';
-import { ClientCalendar } from './pages/client/Calendar';
-import { ClientTimeSelection } from './pages/client/TimeSelection';
-import { ClientProfessionalSelection } from './pages/client/ProfessionalSelection';
-import { ClientAuthStep } from './pages/client/ClientAuthStep';
-import { ClientOTP } from './pages/client/OTP';
-import { ClientConfirmation } from './pages/client/Confirmation';
-import { ClientWaitingList } from './pages/client/WaitingList';
-import { MyBookings } from './pages/client/MyBookings';
-import { ReferralEntry } from './pages/client/ReferralEntry';
+type Route =
+  | "/"
+  | "/admin/login"
+  | "/client/service"
+  | "/client/calendar"
+  | "/client/time"
+  | "/client/confirm";
 
-// Trial
-import { TrialRegister } from './pages/trial/TrialRegister';
+function safePath(): Route {
+  const p = window.location.pathname || "/";
+  if (p === "/admin/login") return "/admin/login";
+  if (p === "/client/service") return "/client/service";
+  if (p === "/client/calendar") return "/client/calendar";
+  if (p === "/client/time") return "/client/time";
+  if (p === "/client/confirm") return "/client/confirm";
+  return "/";
+}
 
-// Legal
-import { FAQPage } from './pages/legal/FAQ';
-import { PrivacyPage } from './pages/legal/Privacy';
-import { TermsPage } from './pages/legal/Terms';
+export default function App() {
+  const [path, setPath] = useState<Route>(safePath());
 
-// Staff
-import { StaffAgenda } from './pages/staff/Agenda';
-import { StaffPersonalDashboard } from './pages/staff/PersonalDashboard';
+  useEffect(() => {
+    const onPop = () => setPath(safePath());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
-// Owner
-import { OwnerDashboard } from './pages/owner/Dashboard';
-import { OwnerAgenda } from './pages/owner/Agenda';
-import { OwnerReports } from './pages/owner/Reports';
-import { OwnerSettings } from './pages/owner/Settings';
-import { OwnerServices } from './pages/owner/Services';
-import { OwnerStaff } from './pages/owner/Staff';
-import { OwnerClients } from './pages/owner/Clients';
-import { OwnerLogs } from './pages/owner/Logs';
-import { OwnerAbandonedCarts } from './pages/owner/AbandonedCarts';
-import { OwnerOnboarding } from './pages/owner/Onboarding';
-import { OwnerHelp } from './pages/owner/Help';
-import { OwnerMessages } from './pages/owner/Messages';
+  function go(to: Route) {
+    window.history.pushState({}, "", to);
+    setPath(to);
+    window.scrollTo(0, 0);
+  }
 
-// Global Admin
-import { AdminLogin } from './pages/admin/Login';
-import { AdminGlobal } from './pages/admin/Global';
+  const router = { push: (p: string) => go(p as Route) };
 
-const App: React.FC = () => {
   return (
-    <ToastProvider>
-      <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/pricing" element={<LandingPage />} />
-            <Route path="/features" element={<LandingPage />} />
-            <Route path="/trial/register" element={<TrialRegister />} />
-            <Route path="/faq" element={<FAQPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms" element={<TermsPage />} />
+    <Layout>
+      {path === "/" && <Landing />}
+      {path === "/admin/login" && <Login />}
+      {path === "/client/service" && <ServiceSelection router={router} />}
+      {path === "/client/calendar" && <ClientCalendar router={router} />}
+      {path === "/client/time" && <TimeSelection router={router} />}
+      {path === "/client/confirm" && <ClientConfirmation router={router} />}
 
-            {/* Client Booking Flow */}
-            <Route path="/client/booking" element={<ClientServiceSelection />} />
-            <Route path="/client/service" element={<ClientServiceSelection />} />
-            <Route path="/client/calendar" element={<ClientCalendar />} />
-            <Route path="/client/time" element={<ClientTimeSelection />} />
-            <Route path="/client/professional" element={<ClientProfessionalSelection />} />
-            <Route path="/client/auth" element={<ClientAuthStep />} />
-            <Route path="/client/otp" element={<ClientOTP />} />
-            <Route path="/client/confirm" element={<ClientConfirmation />} />
-            <Route path="/client/waiting" element={<ClientWaitingList />} />
-            <Route path="/client/my-bookings" element={<MyBookings />} />
-            <Route path="/referral/:staffId" element={<ReferralEntry />} />
-            
-            {/* Staff Portal */}
-            <Route path="/staff/agenda" element={<StaffAgenda />} />
-            <Route path="/staff/view/:staffId" element={<StaffPersonalDashboard />} />
-
-            {/* Owner Portal */}
-            <Route path="/owner/dashboard" element={<OwnerDashboard />} />
-            <Route path="/owner/onboarding" element={<OwnerOnboarding />} />
-            <Route path="/owner/agenda" element={<OwnerAgenda />} />
-            <Route path="/owner/services" element={<OwnerServices />} />
-            <Route path="/owner/reports" element={<OwnerReports />} />
-            <Route path="/owner/settings" element={<OwnerSettings />} />
-            <Route path="/owner/staff" element={<OwnerStaff />} />
-            <Route path="/owner/clients" element={<OwnerClients />} />
-            <Route path="/owner/logs" element={<OwnerLogs />} />
-            <Route path="/owner/abandoned-carts" element={<OwnerAbandonedCarts />} />
-            <Route path="/owner/help" element={<OwnerHelp />} />
-            <Route path="/owner/messages" element={<OwnerMessages />} />
-
-            {/* Global Admin */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/global" element={<AdminGlobal />} />
-          </Routes>
-        </Layout>
-      </Router>
-    </ToastProvider>
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        <button onClick={() => go("/")} className="px-3 py-2 bg-white text-black rounded">Landing</button>
+        <button onClick={() => go("/admin/login")} className="px-3 py-2 bg-white text-black rounded">Admin</button>
+        <button onClick={() => go("/client/service")} className="px-3 py-2 bg-white text-black rounded">Cliente</button>
+      </div>
+    </Layout>
   );
-};
-
-export default App;
+}
