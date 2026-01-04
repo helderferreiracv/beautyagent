@@ -2,15 +2,39 @@
 <html lang="pt-PT">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BeautyAgent</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>BeautyAgent – A Inteligência que o teu salão merece.</title>
 
-    <link
-      href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,300,400&display=swap"
-      rel="stylesheet"
-    />
-
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,300,400&display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              background: "#1a1a1c",
+              surface: "#242426",
+              primary: "#ebff57",
+              accent: "#ebff57",
+              rose: "#FDA4AF",
+              text: "#f1f0e6",
+              muted: "#9CA3AF",
+              border: "rgba(241, 240, 230, 0.08)"
+            },
+            fontFamily: { sans: ["Satoshi", "sans-serif"] }
+          }
+        }
+      };
+    </script>
+
+    <style>
+      body { background-color: #1a1a1c; color: #f1f0e6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+      .glass-panel { background: rgba(36, 36, 38, 0.8); backdrop-blur: 12px; border: 1px solid rgba(241, 240, 230, 0.08); }
+    </style>
 
     <script type="importmap">
       {
@@ -20,14 +44,17 @@
           "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
           "lucide-react": "https://esm.sh/lucide-react@0.462.0?deps=react@18.3.1",
           "@google/genai": "https://esm.sh/@google/genai@1.3.0",
+          "clsx": "https://esm.sh/clsx@2.1.1",
+          "tailwind-merge": "https://esm.sh/tailwind-merge@2.3.0",
           "jspdf": "https://esm.sh/jspdf@2.5.1",
-          "jspdf-autotable": "https://esm.sh/jspdf-autotable@3.8.2"
+          "jspdf-autotable": "https://esm.sh/jspdf-autotable@3.8.2",
+          "canvas-confetti": "https://esm.sh/canvas-confetti@1.9.3"
         }
       }
     </script>
   </head>
 
-  <body class="bg-black text-white">
+  <body class="dark">
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>
